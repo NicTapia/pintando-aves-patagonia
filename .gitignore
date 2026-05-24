@@ -1,0 +1,8 @@
+# Ignorar videos pesados si se pueden descargar de otra parte
+assets/videos/*.mp4
+
+# Ignorar archivos temporales del sistema o del IDE
+.DS_Store
+Thumbs.db
+.gemini/
+.antigravity/

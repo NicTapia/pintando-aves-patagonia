@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="rain">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pintando Aves Patagonia – Arte a mano sobre vajilla</title>
+  <meta name="description" content="Pinturas únicas de aves patagónicas realizadas a mano sobre tazas, teteras y utensilios. Arte artesanal directo desde la Patagonia." />
+  <meta name="keywords" content="pintado aves patagonia, tazas pintadas, arte patagónico, vajilla artesanal, teteras pintadas" />
+  <meta property="og:title" content="Pintando Aves Patagonia" />
+  <meta property="og:description" content="Arte único sobre vajilla – aves patagónicas pintadas a mano." />
+  <meta property="og:type" content="website" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Dancing+Script:wght@600&display=swap" rel="stylesheet" />
+
+  <!-- GSAP CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-theme="rain">
+
+  <!-- ═══════════════════════════════════════ CANVAS OVERLAY (particles / birds) -->
+  <canvas id="ambient-canvas" aria-hidden="true"></canvas>
+
+
+
+  <!-- ═══════════════════════════════════════ FOG LAYERS (rain theme) -->
+  <div class="fog-layer fog-layer--1" aria-hidden="true"></div>
+  <div class="fog-layer fog-layer--2" aria-hidden="true"></div>
+
+  <!-- ═══════════════════════════════════════ STOVE (rain theme sidebar decoration) -->
+  <aside class="stove-decoration" aria-hidden="true">
+    <div class="stove">
+      <div class="stove__body">
+        <div class="stove__window">
+          <div class="stove__flame stove__flame--1"></div>
+          <div class="stove__flame stove__flame--2"></div>
+          <div class="stove__flame stove__flame--3"></div>
+          <div class="stove__ember"></div>
+        </div>
+        <div class="stove__legs">
+          <span></span><span></span>
+        </div>
+      </div>
+      <div class="stove__pipe"></div>
+      <p class="stove__label">Calidez del taller</p>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════════ HERO / HEADER -->
+  <header class="site-header" role="banner">
+
+    <!-- Dynamic background: two videos (rain + sun) with CSS opacity switching -->
+    <div class="hero-bg" aria-hidden="true">
+      <!-- Video Lluvia (visible in rain theme) -->
+      <video
+        id="hero-video-rain"
+        class="hero-bg__video hero-bg__video--rain"
+        src="assets/video-lluvia.mp4"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+        aria-hidden="true"
+      ></video>
+      <!-- Video Sol (visible in sun theme) -->
+      <video
+        id="hero-video-sun"
+        class="hero-bg__video hero-bg__video--sun"
+        src="assets/paisaje-sol.mp4"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+        aria-hidden="true"
+      ></video>
+      <div class="hero-bg__overlay"></div>
+    </div>
+    <div class="header-inner">
+      <!-- Logo watercolor circle -->
+      <div class="logo-wrap" id="logo">
+        <div class="logo-watercolor">
+          <!-- Real logo (drop assets/logo-real.png to activate) -->
+          <img
+            id="logo-real"
+            class="logo-watercolor__img"
+            src="assets/logo-real.png"
+            alt="Logo Pintando Aves Patagonia"
+            onerror="this.style.display='none'; document.getElementById('logo-svg-fallback').style.display='block';"
+          />
+          <!-- SVG fallback (shown when logo-real.png is missing) -->
+          <div id="logo-svg-fallback">
+            <div class="logo-watercolor__circle"></div>
+            <div class="logo-watercolor__splash logo-watercolor__splash--1"></div>
+            <div class="logo-watercolor__splash logo-watercolor__splash--2"></div>
+            <div class="logo-watercolor__splash logo-watercolor__splash--3"></div>
+            <svg class="logo-bird" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <ellipse cx="48" cy="52" rx="14" ry="9" fill="#1a4a2a" opacity="0.8"/>
+              <circle cx="60" cy="45" r="9" fill="#1a4a2a" opacity="0.8"/>
+              <path d="M67 44 L78 41 L67 48Z" fill="#7a4a20" opacity="0.85"/>
+              <path d="M36 55 Q32 62 34 68 Q40 62 38 56Z" fill="#1a4a2a" opacity="0.7"/>
+              <path d="M25 62 Q55 58 75 62" stroke="#6b4422" stroke-width="3" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="logo-text">
+          <span class="logo-text__title">Pintando Aves</span>
+          <span class="logo-text__subtitle">Patagonia</span>
+        </div>
+      </div>
+
+      <!-- Nav -->
+      <nav class="site-nav" aria-label="Navegación principal">
+        <ul>
+          <li><a href="#about">El Arte</a></li>
+          <li><a href="#gallery">Galería</a></li>
+          <li><a href="#contact">Contacto</a></li>
+        </ul>
+      </nav>
+
+      <!-- ═══════════════════════════════════════ THEME TOGGLE -->
+      <button id="theme-toggle" class="theme-toggle" aria-label="Cambiar tema" title="Alternar tema Lluvia / Sol">
+        <span class="theme-toggle__icon theme-toggle__icon--rain">🌧️</span>
+        <span class="theme-toggle__icon theme-toggle__icon--sun">☀️</span>
+        <span class="theme-toggle__label">Tema</span>
+      </button>
+    </div>
+
+    <!-- Hero tagline -->
+    <div class="hero-tagline">
+      <h1 class="hero-tagline__title">Arte vivo<br/><em>sobre cada pieza</em></h1>
+      <p class="hero-tagline__sub">Aves de la Patagonia pintadas a mano, pieza por pieza, con amor artesanal.</p>
+      <a href="#gallery" class="cta-button" id="cta-explore">Explorar colección</a>
+    </div>
+
+    <!-- Decorative feather scroll indicator -->
+    <div class="scroll-hint" aria-hidden="true">
+      <svg viewBox="0 0 24 40" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8" y="1" width="8" height="22" rx="4" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <circle cx="12" cy="8" r="2" fill="currentColor">
+          <animate attributeName="cy" values="8;16;8" dur="1.8s" repeatCount="indefinite"/>
+        </circle>
+        <path d="M6 28 L12 38 L18 28" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════ ABOUT THE ART -->
+  <section class="about-section" id="about" aria-labelledby="about-heading">
+    <div class="container">
+      <div class="about-grid">
+        <div class="about-text">
+          <span class="section-label">El arte de pintar</span>
+          <h2 id="about-heading" class="section-title">Cada pieza, <em>única e irrepetible</em></h2>
+          <p class="about-lead">Nuestras pinturas nacen de la Patagonia profunda: sus cielos, sus bosques y las aves que los habitan.</p>
+          <p>Cada taza, tetera y utensilio es una obra individual pintada <strong>completamente a mano</strong>, con pintura acrílica o esmalte especial para cerámica. No hay dos piezas iguales: las pinceladas, los colores y las poses de cada ave varían en cada pieza.</p>
+          <p>El proceso va desde el boceto hasta la fijación en horno, garantizando colores duraderos que resisten el lavado sin perder vida ni detalle.</p>
+          <ul class="about-features">
+            <li>
+              <span class="feature-icon">🎨</span>
+              <div>
+                <strong>100% pintado a mano</strong>
+                <small>Sin serigrafía ni calcomanías</small>
+              </div>
+            </li>
+            <li>
+              <span class="feature-icon">🦆</span>
+              <div>
+                <strong>Aves patagónicas</strong>
+                <small>Martín pescador, cóndor, flamenco y más</small>
+              </div>
+            </li>
+            <li>
+              <span class="feature-icon">🫖</span>
+              <div>
+                <strong>Vajilla de uso diario</strong>
+                <small>Tazas, teteras, cucharas y jarras</small>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="about-visual">
+          <div class="about-visual__frame">
+            <div class="about-visual__mockup">
+              <!-- Martín Pescador illustration (real PNG) -->
+              <img
+                id="martin-pescador-img"
+                class="mug-illustration"
+                src="assets/martin-pescador.png"
+                alt="Martín Pescador posado en rama, pintura original sobre vajilla patagónica"
+                onerror="this.style.display='none'; document.getElementById('martin-pescador-svg').style.display='block';"
+              />
+              <!-- SVG fallback (shown only when PNG is missing) -->
+              <svg id="martin-pescador-svg" class="mug-illustration" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg" aria-label="Ilustración de Martín Pescador" style="display:none;">
+                <!-- Mug body -->
+                <path d="M35 60 Q35 50 45 50 L155 50 Q165 50 165 60 L175 170 Q175 180 165 185 L35 185 Q25 180 25 170 Z" fill="var(--mug-body)" stroke="var(--mug-stroke)" stroke-width="2"/>
+                <!-- Mug rim highlight -->
+                <ellipse cx="100" cy="52" rx="60" ry="10" fill="var(--mug-rim)" opacity="0.6"/>
+                <!-- Mug handle -->
+                <path d="M165 90 Q210 90 210 120 Q210 155 165 155" stroke="var(--mug-stroke)" stroke-width="12" fill="none" stroke-linecap="round"/>
+                <!-- Bird painting on mug -->
+                <g transform="translate(55,85)">
+                  <ellipse cx="45" cy="45" rx="28" ry="18" fill="var(--bird-body)" opacity="0.85"/>
+                  <path d="M20 42 Q35 25 60 38" stroke="var(--bird-wing)" stroke-width="3" fill="none" stroke-linecap="round"/>
+                  <path d="M17 48 Q5 55 8 65 Q15 60 17 55" fill="var(--bird-tail)" opacity="0.7"/>
+                  <circle cx="70" cy="35" r="13" fill="var(--bird-head)"/>
+                  <path d="M80 34 L92 32 L80 37Z" fill="var(--bird-beak)"/>
+                  <circle cx="74" cy="32" r="3" fill="white"/>
+                  <circle cx="75" cy="32" r="1.5" fill="#222"/>
+                  <path d="M0 65 Q45 60 90 65" stroke="var(--bird-branch)" stroke-width="4" fill="none" stroke-linecap="round"/>
+                  <path d="M40 65 L38 75 M55 63 L53 73" stroke="var(--bird-branch)" stroke-width="2" fill="none"/>
+                </g>
+                <!-- Water ripple hint -->
+                <ellipse cx="100" cy="70" rx="55" ry="8" fill="var(--mug-liquid)" opacity="0.25"/>
+              </svg>
+            </div>
+            <div class="about-visual__glow" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════ GALLERY -->
+  <section class="gallery-section" id="gallery" aria-labelledby="gallery-heading">
+    <div class="container">
+      <span class="section-label">Colección</span>
+      <h2 id="gallery-heading" class="section-title">Galería de piezas</h2>
+      <p class="gallery-intro">Fotos reales de las obras. Colocá las imágenes en la carpeta <code>assets/</code> con los nombres indicados.</p>
+
+      <div class="gallery-filters" role="group" aria-label="Filtrar por categoría">
+        <button class="filter-btn filter-btn--active" data-filter="all" id="filter-all">Todos</button>
+        <button class="filter-btn" data-filter="tazas" id="filter-tazas">Tazas</button>
+        <button class="filter-btn" data-filter="materos" id="filter-materos">Materos</button>
+        <button class="filter-btn" data-filter="utensilios" id="filter-utensilios">Utensilios</button>
+        <button class="filter-btn" data-filter="termos" id="filter-termos">Termos</button>
+      </div>
+
+      <div class="gallery-grid" id="gallery-grid" role="list">
+
+        <!-- TAZA 1: Chucao -->
+        <article class="gallery-card" data-category="tazas" role="listitem"
+          data-images="assets/galeria/taza-chucao.png,assets/galeria/taza-chucao-detalle1.jpg,assets/galeria/taza-chucao-detalle2.jpg,assets/galeria/taza-chucao-detalle3.jpg,assets/galeria/taza-chucao-detalle4.jpg"
+          data-title="Chucao Patagónico"
+        >
+          <div class="gallery-card__image-wrap">
+            <img
+              class="gallery-card__photo"
+              src="assets/galeria/taza-chucao.png"
+              alt="Taza con ave Chucao pintada a mano sobre cerámica beige"
+              loading="lazy"
+              onerror="this.classList.add('img-error');"
+            />
+            <div class="gallery-card__placeholder" style="display:none;">
+              <svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+                <rect width="160" height="160" fill="var(--placeholder-bg)"/>
+                <path d="M40 75 Q40 65 50 65 L110 65 Q120 65 120 75 L125 120 Q125 128 115 130 L45 130 Q35 128 35 120Z" fill="var(--placeholder-item)" opacity="0.5"/>
+                <path d="M120 85 Q145 85 145 100 Q145 118 120 118" stroke="var(--placeholder-item)" stroke-width="8" fill="none" opacity="0.5" stroke-linecap="round"/>
+                <ellipse cx="80" cy="67" rx="30" ry="6" fill="var(--placeholder-item)" opacity="0.3"/>
+                <text x="80" y="148" text-anchor="middle" font-size="10" fill="var(--placeholder-text)" font-family="Lato">taza-chucao.jpg</text>
+              </svg>
+            </div>
+          </div>
+          <div class="gallery-card__info">
+            <span class="gallery-card__badge">Taza</span>
+            <h3 class="gallery-card__name">Chucao Patagónico</h3>
+            <p class="gallery-card__desc">Pintado a mano · Cerámica beige · 350 ml</p>
+            <a href="#contact" class="gallery-card__cta">Consultar</a>
+          </div>
+        </article>
+
+        <!-- TAZA 2: Siete Colores -->
+        <article class="gallery-card" data-category="tazas" role="listitem"
+          data-images="assets/galeria/taza-sietecolores.png,assets/galeria/taza-sietecolores-detalle1.jpg,assets/galeria/taza-sietecolores-detalle2.jpg,assets/galeria/taza-sietecolores-detalle3.jpg,assets/galeria/taza-sietecolores-detalle4.jpg"
+          data-title="Siete Colores"
+        >
+          <div class="gallery-card__image-wrap">
+            <img
+              class="gallery-card__photo"
+              src="assets/galeria/taza-sietecolores.png"
+              alt="Taza negra con Ave Siete Colores pintada a mano"
+              loading="lazy"
+              onerror="this.classList.add('img-error');"
+            />
+            <div class="gallery-card__placeholder" style="display:none;">
+              <svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+                <rect width="160" height="160" fill="var(--placeholder-bg)"/>
+                <path d="M40 75 Q40 65 50 65 L110 65 Q120 65 120 75 L125 120 Q125 128 115 130 L45 130 Q35 128 35 120Z" fill="var(--placeholder-item)" opacity="0.5"/>
+                <path d="M120 85 Q145 85 145 100 Q145 118 120 118" stroke="var(--placeholder-item)" stroke-width="8" fill="none" opacity="0.5" stroke-linecap="round"/>
+                <text x="80" y="148" text-anchor="middle" font-size="10" fill="var(--placeholder-text)" font-family="Lato">taza-sietecolores.jpg</text>
+              </svg>
+            </div>
+          </div>
+          <div class="gallery-card__info">
+            <span class="gallery-card__badge">Taza</span>
+            <h3 class="gallery-card__name">Siete Colores</h3>
+            <p class="gallery-card__desc">Pintado a mano · Taza negra · Edición única</p>
+            <a href="#contact" class="gallery-card__cta">Consultar</a>
+          </div>
+        </article>
+
+        <!-- UTENSILIO/COCINA 1: Tetera Gallo -->
+        <article class="gallery-card" data-category="utensilios" role="listitem"
+          data-images="assets/galeria/tetera-gallo.png,assets/galeria/tetera-gallo-detalle1.jpg,assets/galeria/tetera-gallo-detalle2.jpg,assets/galeria/tetera-gallo-detalle3.jpg,assets/galeria/tetera-gallo-detalle4.jpg"
+          data-title="Gallo del Sur"
+        >
+          <div class="gallery-card__image-wrap">
+            <img
+              class="gallery-card__photo"
+              src="assets/galeria/tetera-gallo.png"
+              alt="Tetera negra con gallo detallado pintado a mano"
+              loading="lazy"
+              onerror="this.classList.add('img-error');"
+            />
+            <div class="gallery-card__placeholder" style="display:none;">
+              <svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+                <rect width="160" height="160" fill="var(--placeholder-bg)"/>
+                <ellipse cx="80" cy="100" rx="45" ry="38" fill="var(--placeholder-item)" opacity="0.45"/>
+                <path d="M35 90 Q10 70 20 55" stroke="var(--placeholder-item)" stroke-width="10" fill="none" opacity="0.5" stroke-linecap="round"/>
+                <path d="M125 80 Q150 80 150 100 Q150 125 125 125" stroke="var(--placeholder-item)" stroke-width="8" fill="none" opacity="0.5" stroke-linecap="round"/>
+                <ellipse cx="80" cy="64" rx="22" ry="7" fill="var(--placeholder-item)" opacity="0.4"/>
+                <text x="80" y="150" text-anchor="middle" font-size="10" fill="var(--placeholder-text)" font-family="Lato">tetera-gallo.jpg</text>
+              </svg>
+            </div>
+          </div>
+          <div class="gallery-card__info">
+            <span class="gallery-card__badge gallery-card__badge--utensilio">Cocina</span>
+            <h3 class="gallery-card__name">Gallo del Sur</h3>
+            <p class="gallery-card__desc">Pintado a mano · Tetera negra · Detalle fino</p>
+            <a href="#contact" class="gallery-card__cta">Consultar</a>
+          </div>
+        </article>
+
+        <!-- UTENSILIO/TERMOS: Termo Águila -->
+        <article class="gallery-card" data-category="termos" role="listitem"
+          data-images="assets/galeria/termo-aguila.png,assets/galeria/termo-aguila-detalle1.jpg,assets/galeria/termo-aguila-detalle2.jpg,assets/galeria/termo-aguila-detalle3.jpg,assets/galeria/termo-aguila-detalle4.jpg"
+          data-title="Águila Patagónica"
+        >
+          <div class="gallery-card__image-wrap">
+            <img
+              class="gallery-card__photo"
+              src="assets/galeria/termo-aguila.png"
+              alt="Termo negro con águila pintada y fondo de lago patagónico"
+              loading="lazy"
+              onerror="this.classList.add('img-error');"
+            />
+            <div class="gallery-card__placeholder" style="display:none;">
+              <svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+                <rect width="160" height="160" fill="var(--placeholder-bg)"/>
+                <rect x="55" y="30" width="50" height="110" rx="12" fill="var(--placeholder-item)" opacity="0.5"/>
+                <ellipse cx="80" cy="30" rx="25" ry="8" fill="var(--placeholder-item)" opacity="0.4"/>
+                <ellipse cx="80" cy="140" rx="25" ry="8" fill="var(--placeholder-item)" opacity="0.35"/>
+                <text x="80" y="155" text-anchor="middle" font-size="10" fill="var(--placeholder-text)" font-family="Lato">termo-aguila.jpg</text>
+              </svg>
+            </div>
+          </div>
+          <div class="gallery-card__info">
+            <span class="gallery-card__badge gallery-card__badge--tetera">Termo</span>
+            <h3 class="gallery-card__name">Águila Patagónica</h3>
+            <p class="gallery-card__desc">Pintado a mano · Termo negro · Fondo de lago</p>
+            <a href="#contact" class="gallery-card__cta">Consultar</a>
+          </div>
+        </article>
+
+        <!-- MATERO 1: Chucao -->
+        <article class="gallery-card" data-category="materos" role="listitem"
+          data-images="assets/galeria/matero-chucao.png,assets/galeria/matero-chucao-detalle1.jpg,assets/galeria/matero-chucao-detalle2.jpg,assets/galeria/matero-chucao-detalle3.jpg,assets/galeria/matero-chucao-detalle4.jpg"
+          data-title="Matero Chucao"
+          data-whatsapp-message="Hola! Me interesa conocer más detalles sobre el Matero Chucao"
+        >
+          <div class="gallery-card__image-wrap">
+            <img class="gallery-card__photo" src="assets/galeria/matero-chucao.png" alt="Matero con ave Chucao pintada a mano" loading="lazy" onerror="this.classList.add('img-error');" />
+            <div class="gallery-card__placeholder" style="display:none;"><svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg"><rect width="160" height="160" fill="var(--placeholder-bg)"/><text x="80" y="85" text-anchor="middle" font-size="12" fill="var(--placeholder-text)" font-family="sans-serif">matero-chucao</text></svg></div>
+          </div>
+          <div class="gallery-card__info">
+            <span class="gallery-card__badge gallery-card__badge--matero">Matero</span>
+            <h3 class="gallery-card__name">Matero Chucao</h3>
+            <p class="gallery-card__desc">Pintado a mano · Calabaza natural · Edición limitada</p>
+            <a href="#contact" class="gallery-card__cta">Consultar</a>
+          </div>
+        </article>
+
+        <!-- MATERO 2: Pato -->
+        <article class="gallery-card" data-category="materos" role="listitem"
+          data-images="assets/galeria/matero-pato.png,assets/galeria/matero-pato-detalle1.jpg,assets/galeria/matero-pato-detalle2.jpg,assets/galeria/matero-pato-detalle3.jpg,assets/galeria/matero-pato-detalle4.jpg"
+          data-title="Matero Pato"
+          data-whatsapp-message="Hola! Me interesa conocer más detalles sobre el Matero Pato"
+        >
+          <div class="gallery-card__image-wrap">
+            <img class="gallery-card__photo" src="assets/galeria/matero-pato.png" alt="Matero con Pato Cortacorrientes pintado a mano" loading="lazy" onerror="this.classList.add('img-error');" />
+            <div class="gallery-card__placeholder" style="display:none;"><svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg"><rect width="160" height="160" fill="var(--placeholder-bg)"/><text x="80" y="85" text-anchor="middle" font-size="12" fill="var(--placeholder-text)" font-family="sans-serif">matero-pato</text></svg></div>
+          </div>
+          <div class="gallery-card__info">
+            <span class="gallery-card__badge gallery-card__badge--matero">Matero</span>
+            <h3 class="gallery-card__name">Matero Pato</h3>
+            <p class="gallery-card__desc">Pintado a mano · Calabaza natural · Ave ribereña</p>
+            <a href="#contact" class="gallery-card__cta">Consultar</a>
+          </div>
+        </article>
+
+        <!-- TAZA: Bandurria -->
+        <article class="gallery-card" data-category="tazas" role="listitem"
+          data-images="assets/galeria/taza-bandurria.png,assets/galeria/taza-bandurria-detalle1.jpg,assets/galeria/taza-bandurria-detalle2.jpg,assets/galeria/taza-bandurria-detalle3.jpg,assets/galeria/taza-bandurria-detalle4.jpg"
+          data-title="Bandurria Austral"
+        >
+          <div class="gallery-card__image-wrap">
+            <img class="gallery-card__photo" src="assets/galeria/taza-bandurria.png" alt="Taza con Bandurria pintada a mano" loading="lazy" onerror="this.classList.add('img-error');" />
+            <div class="gallery-card__placeholder" style="display:none;"><svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg"><rect width="160" height="160" fill="var(--placeholder-bg)"/><text x="80" y="85" text-anchor="middle" font-size="12" fill="var(--placeholder-text)" font-family="sans-serif">taza-bandurria</text></svg></div>
+          </div>
+          <div class="gallery-card__info">
+            <span class="gallery-card__badge">Taza</span>
+            <h3 class="gallery-card__name">Bandurria Austral</h3>
+            <p class="gallery-card__desc">Pintado a mano · Cerámica blanca · Pico curvo y elegante</p>
+            <a href="#contact" class="gallery-card__cta">Consultar</a>
+          </div>
+        </article>
+
+        <!-- TAZA: Carpinterito -->
+        <article class="gallery-card" data-category="tazas" role="listitem"
+          data-images="assets/galeria/taza-carpinterito.png,assets/galeria/taza-carpinterito-detalle1.jpg,assets/galeria/taza-carpinterito-detalle2.jpg,assets/galeria/taza-carpinterito-detalle3.jpg,assets/galeria/taza-carpinterito-detalle4.jpg"
+          data-title="Carpinterito Patagónico"
+        >
+          <div class="gallery-card__image-wrap">
+            <img class="gallery-card__photo" src="assets/galeria/taza-carpinterito.png" alt="Taza con Carpinterito pintado a mano" loading="lazy" onerror="this.classList.add('img-error');" />
+            <div class="gallery-card__placeholder" style="display:none;"><svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg"><rect width="160" height="160" fill="var(--placeholder-bg)"/><text x="80" y="85" text-anchor="middle" font-size="12" fill="var(--placeholder-text)" font-family="sans-serif">taza-carpinterito</text></svg></div>
+          </div>
+          <div class="gallery-card__info">
+            <span class="gallery-card__badge">Taza</span>
+            <h3 class="gallery-card__name">Carpinterito Patagónico</h3>
+            <p class="gallery-card__desc">Pintado a mano · Cerámica beige · Detalle en lengas</p>
+            <a href="#contact" class="gallery-card__cta">Consultar</a>
+          </div>
+        </article>
+
+        <!-- TAZA: Carpintero -->
+        <article class="gallery-card" data-category="tazas" role="listitem"
+          data-images="assets/galeria/taza-carpintero.png,assets/galeria/taza-carpintero-detalle1.jpg,assets/galeria/taza-carpintero-detalle2.jpg,assets/galeria/taza-carpintero-detalle3.jpg,assets/galeria/taza-carpintero-detalle4.jpg"
+          data-title="Carpintero Negro"
+        >
+          <div class="gallery-card__image-wrap">
+            <img class="gallery-card__photo" src="assets/galeria/taza-carpintero.png" alt="Taza con Carpintero Negro pintado a mano" loading="lazy" onerror="this.classList.add('img-error');" />
+            <div class="gallery-card__placeholder" style="display:none;"><svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg"><rect width="160" height="160" fill="var(--placeholder-bg)"/><text x="80" y="85" text-anchor="middle" font-size="12" fill="var(--placeholder-text)" font-family="sans-serif">taza-carpintero</text></svg></div>
+          </div>
+          <div class="gallery-card__info">
+            <span class="gallery-card__badge">Taza</span>
+            <h3 class="gallery-card__name">Carpintero Negro</h3>
+            <p class="gallery-card__desc">Pintado a mano · Cerámica oscura · Cresta escarlata</p>
+            <a href="#contact" class="gallery-card__cta">Consultar</a>
+          </div>
+        </article>
+
+        <!-- TAZA: Loica -->
+        <article class="gallery-card" data-category="tazas" role="listitem"
+          data-images="assets/galeria/taza-loica.png,assets/galeria/taza-loica-detalle1.jpg,assets/galeria/taza-loica-detalle2.jpg,assets/galeria/taza-loica-detalle3.jpg,assets/galeria/taza-loica-detalle4.jpg"
+          data-title="Loica Patagónica"
+        >
+          <div class="gallery-card__image-wrap">
+            <img class="gallery-card__photo" src="assets/galeria/taza-loica.png" alt="Taza con Loica pintada a mano" loading="lazy" onerror="this.classList.add('img-error');" />
+            <div class="gallery-card__placeholder" style="display:none;"><svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg"><rect width="160" height="160" fill="var(--placeholder-bg)"/><text x="80" y="85" text-anchor="middle" font-size="12" fill="var(--placeholder-text)" font-family="sans-serif">taza-loica</text></svg></div>
+          </div>
+          <div class="gallery-card__info">
+            <span class="gallery-card__badge">Taza</span>
+            <h3 class="gallery-card__name">Loica Patagónica</h3>
+            <p class="gallery-card__desc">Pintado a mano · Cerámica beige · Pecho rojo llama</p>
+            <a href="#contact" class="gallery-card__cta">Consultar</a>
+          </div>
+        </article>
+
+        <!-- TAZA: Martín Pescador -->
+        <article class="gallery-card" data-category="tazas" role="listitem"
+          data-images="assets/galeria/taza-martin-pescador.png,assets/galeria/taza-martin-pescador-detalle1.jpg,assets/galeria/taza-martin-pescador-detalle2.jpg,assets/galeria/taza-martin-pescador-detalle3.jpg,assets/galeria/taza-martin-pescador-detalle4.jpg"
+          data-title="Taza Martín Pescador"
+        >
+          <div class="gallery-card__image-wrap">
+            <img class="gallery-card__photo" src="assets/galeria/taza-martin-pescador.png" alt="Taza con Martín Pescador pintado a mano" loading="lazy" onerror="this.classList.add('img-error');" />
+            <div class="gallery-card__placeholder" style="display:none;"><svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg"><rect width="160" height="160" fill="var(--placeholder-bg)"/><text x="80" y="85" text-anchor="middle" font-size="12" fill="var(--placeholder-text)" font-family="sans-serif">taza-martin</text></svg></div>
+          </div>
+          <div class="gallery-card__info">
+            <span class="gallery-card__badge">Taza</span>
+            <h3 class="gallery-card__name">Taza Martín Pescador</h3>
+            <p class="gallery-card__desc">Pintado a mano · Cerámica azul · El rayo del río</p>
+            <a href="#contact" class="gallery-card__cta">Consultar</a>
+          </div>
+        </article>
+
+        <!-- TAZA: Traro -->
+        <article class="gallery-card" data-category="tazas" role="listitem"
+          data-images="assets/galeria/taza-traro.png,assets/galeria/taza-traro-detalle1.jpg,assets/galeria/taza-traro-detalle2.jpg,assets/galeria/taza-traro-detalle3.jpg,assets/galeria/taza-traro-detalle4.jpg"
+          data-title="Traro del Sur"
+        >
+          <div class="gallery-card__image-wrap">
+            <img class="gallery-card__photo" src="assets/galeria/taza-traro.png" alt="Taza con Traro pintado a mano" loading="lazy" onerror="this.classList.add('img-error');" />
+            <div class="gallery-card__placeholder" style="display:none;"><svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg"><rect width="160" height="160" fill="var(--placeholder-bg)"/><text x="80" y="85" text-anchor="middle" font-size="12" fill="var(--placeholder-text)" font-family="sans-serif">taza-traro</text></svg></div>
+          </div>
+          <div class="gallery-card__info">
+            <span class="gallery-card__badge">Taza</span>
+            <h3 class="gallery-card__name">Traro del Sur</h3>
+            <p class="gallery-card__desc">Pintado a mano · Cerámica negra · El señor de la pampa</p>
+            <a href="#contact" class="gallery-card__cta">Consultar</a>
+          </div>
+        </article>
+
+      </div><!-- /gallery-grid -->
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ BIRDS DIRECTORY -->
+  <section class="birds-section" id="birds-directory" aria-labelledby="birds-heading">
+    <div class="container">
+      <span class="section-label">Catálogo Mágico</span>
+      <h2 id="birds-heading" class="section-title">Conoce las aves de la Patagonia</h2>
+      <p class="gallery-intro" style="margin-bottom: 3rem;">Descubre la historia detrás de cada pincelada y elige la compañera ideal para tu mesa.</p>
+      <div class="birds-grid">
+        <article class="bird-card" data-name="Chucao" data-desc="Ave agorera de pecho rojo; su canto decide el destino del caminante.">
+          <img src="assets/aves/ave-1.png" alt="Chucao" class="bird-card__img" loading="lazy">
+        </article>
+        <article class="bird-card" data-name="Siete Colores" data-desc="Una joya del humedal que habita saltando entre juncos y totoras.">
+          <img src="assets/aves/ave-2.png" alt="Siete Colores" class="bird-card__img" loading="lazy">
+        </article>
+        <article class="bird-card" data-name="Martín Pescador" data-desc="El rayo azul de los ríos; un pescador infalible y elegante.">
+          <img src="assets/aves/ave-3.png" alt="Martín Pescador" class="bird-card__img" loading="lazy">
+        </article>
+        <article class="bird-card" data-name="Carpintero Negro" data-desc="El constructor del bosque; su martilleo rítmico resuena en las lengas.">
+          <img src="assets/aves/ave-4.png" alt="Carpintero Negro" class="bird-card__img" loading="lazy">
+        </article>
+        <article class="bird-card" data-name="Picaflor Rubí" data-desc="Un destello de fuego que visita las flores de chilco y arrayán.">
+          <img src="assets/aves/ave-5.png" alt="Picaflor Rubí" class="bird-card__img" loading="lazy">
+        </article>
+        <article class="bird-card" data-name="Águila Mora" data-desc="La reina de las alturas, planeando majestuosa sobre la cordillera.">
+          <img src="assets/aves/ave-6.png" alt="Águila Mora" class="bird-card__img" loading="lazy">
+        </article>
+        <article class="bird-card" data-name="Chuncho" data-desc="El pequeño gran cazador; de mirada fija y vuelo completamente silencioso.">
+          <img src="assets/aves/ave-7.png" alt="Chuncho" class="bird-card__img" loading="lazy">
+        </article>
+        <article class="bird-card" data-name="Zorzal" data-desc="El canto más dulce del sur, compañero fiel de cada jardín patagónico.">
+          <img src="assets/aves/ave-8.png" alt="Zorzal" class="bird-card__img" loading="lazy">
+        </article>
+        <article class="bird-card" data-name="Pato Cortacorrientes" data-desc="El atleta del río, nadando con fuerza contra las aguas blancas.">
+          <img src="assets/aves/ave-9.png" alt="Pato Cortacorrientes" class="bird-card__img" loading="lazy">
+        </article>
+        <article class="bird-card" data-name="Bandurria Austral" data-desc="Con su pico curvo y largo como media luna, sondea praderas y humedales en busca de su destino.">
+          <img src="assets/aves/ave-10.png" alt="Bandurria Austral" class="bird-card__img" loading="lazy">
+        </article>
+        <article class="bird-card" data-name="Loica Patagónica" data-desc="Pecho escarlata que enciende el campo; su canto claro anuncia el amanecer de los pastizales del sur.">
+          <img src="assets/aves/ave-11.png" alt="Loica Patagónica" class="bird-card__img" loading="lazy">
+        </article>
+        <article class="bird-card" data-name="Traro" data-desc="Señor de la pampa y los campos; su mirada fiera y máscara negra lo hacen inconfundible en el horizonte.">
+          <img src="assets/aves/ave-12.png" alt="Traro" class="bird-card__img" loading="lazy">
+        </article>
+        <article class="bird-card" data-name="Carpinterito" data-desc="El pequeño carpintero de los bosques de lenga; su labor incansable da vida a los árboles muertos.">
+          <img src="assets/aves/ave-13.png" alt="Carpinterito" class="bird-card__img" loading="lazy">
+        </article>
+        <article class="bird-card" data-name="Cigüeña Austral" data-desc="La dama blanca de los campos húmedos; camina con pausa, eligiendo cada paso como si fuera el último del día.">
+          <img src="assets/aves/ave-14.png" alt="Cigüeña Austral" class="bird-card__img" loading="lazy">
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ PROCESS -->
+  <section class="process-section" aria-labelledby="process-heading">
+    <div class="container">
+      <span class="section-label">Cómo nace cada pieza</span>
+      <h2 id="process-heading" class="section-title">El proceso artesanal</h2>
+      <ol class="process-steps">
+        <li class="process-step" data-step="01">
+          <div class="process-step__icon">✏️</div>
+          <h3>Boceto</h3>
+          <p>Cada diseño comienza a lápiz, observando fotos y guías de campo de aves patagónicas.</p>
+        </li>
+        <li class="process-step" data-step="02">
+          <div class="process-step__icon">🎨</div>
+          <h3>Pintura a mano</h3>
+          <p>Pinceles finos y pintura especial para cerámica dan vida al ave sobre la superficie.</p>
+        </li>
+        <li class="process-step" data-step="03">
+          <div class="process-step__icon">🔥</div>
+          <h3>Fijado en horno</h3>
+          <p>El calor fija los colores, haciéndolos resistentes al uso cotidiano y al lavado.</p>
+        </li>
+        <li class="process-step" data-step="04">
+          <div class="process-step__icon">📦</div>
+          <h3>Empaque y envío</h3>
+          <p>Cada pieza es empaquetada con cuidado y enviada a todo el país con total seguridad.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ ARTIST -->
+  <section class="artist-section" id="about-artist" aria-labelledby="artist-heading">
+    <div class="container">
+      <div class="artist-inner">
+        <div class="artist-text">
+          <span class="section-label">Sobre la artista</span>
+          <h2 id="artist-heading" class="section-title">El Alma detrás del Pincel</h2>
+          <p class="artist-description">En Pocohihuen, en la profunda comuna de Cochamó, nace la inspiración de este taller. Cada pieza es una obra de arte pintada a mano que busca plasmar la pureza, el misterio y la biodiversidad de la selva valdiviana y la Patagonia, permitiendo que las personas lleven un pedazo del sur directamente a sus hogares.</p>
+        </div>
+        <div class="artist-photo-wrap">
+          <img
+            src="assets/sobre-nosotros.png"
+            alt="La artista pintando a mano una pieza de vajilla patagónica en su taller"
+            class="artist-photo"
+            loading="lazy"
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ FOOTER / CONTACT -->
+  <footer class="site-footer" id="contact" role="contentinfo">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <span class="footer-logo__icon">🦜</span>
+          <span class="footer-logo__text">Pintando Aves Patagonia</span>
+        </div>
+        <p class="footer-tagline">Arte que vuela desde la Patagonia a tu mesa.</p>
+      </div>
+
+      <div class="footer-contact">
+        <h2 class="footer-contact__title">¿Te interesa una pieza?</h2>
+        <p class="footer-contact__sub">Escribinos directamente para consultar disponibilidad y precios personalizados.</p>
+
+        <div class="contact-buttons">
+          <a
+            href="https://wa.me/56932418899?text=Hola!%20Vi%20sus%20pinturas%20de%20aves%20y%20me%20gustar%C3%ADa%20consultar."
+            class="contact-btn contact-btn--whatsapp"
+            id="btn-whatsapp"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Contactar por WhatsApp"
+          >
+            <svg class="contact-btn__icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" fill="currentColor"/>
+            </svg>
+            <span>Escribir por WhatsApp</span>
+          </a>
+
+          <a
+            href="https://www.instagram.com/pintandoavespatagonia"
+            class="contact-btn contact-btn--instagram"
+            id="btn-instagram"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Ver Instagram"
+          >
+            <svg class="contact-btn__icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" fill="currentColor"/>
+            </svg>
+            <span>Ver en Instagram</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; 2026 Pintando Aves Patagonia · Hecho con 🎨 en la Patagonia</p>
+    </div>
+  </footer>
+
+  <!-- ═════════════════════════════════════════════ LIGHTBOX -->
+  <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-label="Galería ampliada" aria-hidden="true">
+    <div class="lightbox__backdrop" id="lightbox-backdrop"></div>
+    <button class="lightbox__close" id="lightbox-close" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="20" y1="4" x2="4" y2="20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button class="lightbox__nav lightbox__nav--prev" id="lightbox-prev" aria-label="Imagen anterior">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <polyline points="15 18 9 12 15 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="lightbox__stage">
+      <img id="lightbox-img" class="lightbox__img" src="" alt="" />
+      <p id="lightbox-caption" class="lightbox__caption"></p>
+      <div id="lightbox-counter" class="lightbox__counter"></div>
+    </div>
+    <button class="lightbox__nav lightbox__nav--next" id="lightbox-next" aria-label="Imagen siguiente">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <polyline points="9 18 15 12 9 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ═════════════════════════════════════════════ BIRDS MODAL -->
+  <div id="bird-modal" class="lightbox" role="dialog" aria-modal="true" aria-label="Información del ave" aria-hidden="true">
+    <div class="lightbox__backdrop" id="bird-modal-backdrop"></div>
+    <button class="lightbox__close" id="bird-modal-close" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="20" y1="4" x2="4" y2="20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <div class="lightbox__stage" style="padding: 0 1rem; max-width: 500px;">
+      <div class="bird-modal-content">
+        <img id="bird-modal-img" class="lightbox__img bird-modal-img" src="" alt="" style="max-height: 50vh;" />
+        <h3 id="bird-modal-title" class="bird-modal-title"></h3>
+        <p id="bird-modal-desc" class="bird-modal-desc"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
