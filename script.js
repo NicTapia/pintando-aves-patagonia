@@ -36,29 +36,25 @@ body.setAttribute('data-theme', savedTheme);
 let currentTheme = savedTheme;
 
 /**
- * Sync both hero videos to the active theme — Chromium-safe.
+ * Sync both hero videos — Chromium-safe.
  *
- * KEY RULE: Never use display:none on <video> elements in Chromium.
- * When display is none, Chrome stops loading the media source entirely.
- * Instead we control visibility + opacity, which keeps the element in
- * the render tree so the browser continues buffering the video data.
+ * KEY RULE: Never use display:none or pause() on the inactive <video>.
+ * In Chromium, pausing or hiding stops buffer loading entirely.
+ * Both videos run in loop always; CSS opacity (controlled by data-theme)
+ * handles which one is visually visible via a smooth fade.
  *
- * CSS handles the visual fade (opacity transition), but we also set
- * inline styles here as a belt-and-suspenders guarantee in case CSS
- * specificity is ever overridden by a third-party library.
+ * This approach guarantees:
+ * - Zero lag on theme switch (no seek/load needed)
+ * - Smooth 0.8s CSS cross-fade between themes
+ * - Both video sources stay buffered at all times
  */
 function syncHeroVideos(theme) {
-  if (theme === 'sun') {
-    if (heroVideoRain) heroVideoRain.pause();
-    if (heroVideoSun) {
-      heroVideoSun.play().catch(err => console.log("Espera interacción sol"));
-    }
-  } else {
-    if (heroVideoSun) heroVideoSun.pause();
-    if (heroVideoRain) {
-      heroVideoRain.play().catch(err => console.log("Espera interacción lluvia"));
-    }
-  }
+  // Keep both videos playing — CSS data-theme rules handle visual opacity
+  var playPromises = [];
+  if (heroVideoRain) playPromises.push(heroVideoRain.play().catch(function() {}));
+  if (heroVideoSun)  playPromises.push(heroVideoSun.play().catch(function() {}));
+  // Unused: theme parameter kept for API compatibility with callers
+  void theme;
 }
 
 // Initial sync once the DOM is parsed and elements are available
@@ -89,8 +85,44 @@ themeToggle && themeToggle.addEventListener('click', function() {
   body.setAttribute('data-theme', currentTheme);
   localStorage.setItem('pap-theme', currentTheme);
 
-  // Sync both videos with Chromium-safe logic
+  // Sync both hero videos with Chromium-safe logic
   syncHeroVideos(currentTheme);
+
+  // Sync body background videos: play the incoming, pause+reset the outgoing.
+  // Both elements stay in the DOM so Chromium keeps buffering both sources.
+  // CSS data-theme rules control visual opacity/visibility automatically.
+  var bodyVideoSun  = document.getElementById('body-video-sun');
+  var bodyVideoRain = document.getElementById('body-video-rain');
+  if (currentTheme === 'sun') {
+    // Activate sol video
+    if (bodyVideoSun) {
+      bodyVideoSun.currentTime = 0;
+      bodyVideoSun.play().catch(function() {});
+    }
+    // Deactivate lluvia video (keep in DOM for buffering but pause it)
+    if (bodyVideoRain) {
+      bodyVideoRain.pause();
+      bodyVideoRain.currentTime = 0;
+    }
+  } else {
+    // Activate lluvia video
+    if (bodyVideoRain) {
+      bodyVideoRain.currentTime = 0;
+      bodyVideoRain.play().catch(function() {});
+    }
+    // Deactivate sol video
+    if (bodyVideoSun) {
+      bodyVideoSun.pause();
+      bodyVideoSun.currentTime = 0;
+    }
+  }
+
+  // Snap el video de fondo al progreso actual de scroll sin rebote de LERP.
+  // Si usáramos dispatchEvent('scroll'), smoothProgress arrancaría desde su
+  // valor anterior y "perseguiría" al target causando un rebobinado visual.
+  // Al igualarlo directamente, el video del nuevo tema aparece en la posición
+  // correcta desde el primer frame.
+  if (window._videoScrub) window._videoScrub.snap();
 
   // Restart particles for new theme
   initParticles();
@@ -715,5 +747,148 @@ console.log('%c🦜 Pintando Aves Patagonia – Site loaded', 'color:#4caf70;fon
       closeBirdModal();
     }
   });
+})();
+
+/* ======================================
+   13. SCROLL-SYNCED BACKGROUND VIDEOS
+   ──────────────────────────────────────
+   Arquitectura: loop rAF persistente con suavizado LERP.
+   Epsilon 0.02s + detección de idle → pausa limpia al detenerse el scroll.
+====================================== */
+
+(function initScrollVideoScrub() {
+  var vSun  = document.getElementById('body-video-sun');
+  var vRain = document.getElementById('body-video-rain');
+
+  // Duraciones conocidas de cada video (en segundos)
+  var DURATION_SUN  = 16;
+  var DURATION_RAIN = 23;
+
+  // Factor de suavizado LERP: 0.08 ≈ 60fps con lag agradable
+  var LERP_FACTOR = 0.08;
+
+  // Umbral mínimo para llamar seekVideo: evita seeks entre keyframes del mismo GOP.
+  // Con GOP-5 a 30fps el keyframe más cercano está a ~0.083s; 0.08 alineado con eso.
+  var SEEK_THRESHOLD = 0.08;
+
+  // Epsilon: diferencia mínima en segundos bajo la cual NO actualizamos currentTime.
+  // Valor pedido: 0.02s (~0.6 frames a 30fps). Evita writes inútiles a currentTime
+  // cuando el video ya está visualmente en el frame correcto.
+  var EPSILON = 0.02;
+
+  // Tiempo (ms) sin scroll tras el cual consideramos que el usuario se detuvo.
+  var SCROLL_IDLE_MS = 150;
+
+  var targetProgress = 0;
+  var smoothProgress = 0;
+  var lastScrollTime = 0;    // timestamp del último evento scroll
+  var videoIdle      = false; // true cuando el video está pausado por inactividad
+
+  // Exponer API mínima al scope global para que el toggle de tema
+  // pueda snappear smoothProgress sin rebote.
+  window._videoScrub = {
+    snap: function() {
+      smoothProgress = targetProgress;
+      // Al cambiar de tema reiniciamos el estado idle para que el nuevo
+      // video empiece a scrubbearse desde frame 0 correctamente.
+      videoIdle = false;
+      lastScrollTime = performance.now();
+    }
+  };
+
+  // ── Inicializar: ambos videos en pausa en t=0 ──
+  window.addEventListener('DOMContentLoaded', function() {
+    if (vSun)  { vSun.pause();  vSun.currentTime  = 0; }
+    if (vRain) { vRain.pause(); vRain.currentTime = 0; }
+  });
+
+  // ── Handler de scroll: solo leer posición + registrar timestamp ──
+  window.addEventListener('scroll', function() {
+    var maxScrollable = document.documentElement.scrollHeight - window.innerHeight;
+    if (maxScrollable <= 0) return;
+    targetProgress = Math.max(0, Math.min(1, window.scrollY / maxScrollable));
+    lastScrollTime = performance.now();
+    // Si el video estaba en pausa por inactividad, lo reanudamos brevemente
+    // para que el seek del siguiente frame no genere un flash.
+    if (videoIdle) {
+      videoIdle = false;
+    }
+  }, { passive: true });
+
+  // ── Función helper de seek seguro con epsilon ──
+  function seekVideo(video, time) {
+    if (!video) return;
+    var diff = Math.abs(video.currentTime - time);
+    // 1) Si la diferencia es menor al EPSILON (0.02s), no tocamos currentTime.
+    //    Esto evita writes que obligan al decodificador a buscar el mismo frame.
+    if (diff < EPSILON) return;
+    // 2) Si la diferencia es menor al SEEK_THRESHOLD pero mayor al EPSILON,
+    //    tampoco hacemos seek — estamos entre keyframes sin beneficio visual.
+    if (diff < SEEK_THRESHOLD) return;
+    try {
+      if (typeof video.fastSeek === 'function') {
+        video.fastSeek(time);
+      } else {
+        video.currentTime = time;
+      }
+    } catch (e) {
+      // currentTime puede lanzar si el video no está listo
+    }
+  }
+
+  // ── Loop rAF persistente ──
+  function videoScrubLoop() {
+    var now  = performance.now();
+    var idle = (now - lastScrollTime) > SCROLL_IDLE_MS;
+
+    // LERP solo si hay movimiento pendiente
+    var delta = Math.abs(targetProgress - smoothProgress);
+    if (delta > 0.0001) {
+      smoothProgress += (targetProgress - smoothProgress) * LERP_FACTOR;
+    }
+
+    // Si el scroll lleva más de SCROLL_IDLE_MS sin actividad Y el LERP ya
+    // convergió (delta muy pequeño), congelamos el frame pausando el video.
+    // Esto libera la GPU de repintar el mismo frame en cada tick de rAF.
+    var converged = delta < 0.0005;
+
+    if (currentTheme === 'sun') {
+      // ── Modo Sol ──
+      if (vRain) {
+        vRain.style.opacity = '0';
+        if (!vRain.paused) vRain.pause();
+      }
+      if (vSun) {
+        vSun.style.opacity = '';
+        if (idle && converged) {
+          // Scroll detenido + frame convergido → pausar para congelar frame limpio
+          if (!vSun.paused) vSun.pause();
+        } else {
+          // Scrub activo
+          seekVideo(vSun, smoothProgress * DURATION_SUN);
+        }
+      }
+    } else {
+      // ── Modo Lluvia ──
+      if (vSun) {
+        vSun.style.opacity = '0';
+        if (!vSun.paused) vSun.pause();
+      }
+      if (vRain) {
+        vRain.style.opacity = '';
+        if (idle && converged) {
+          if (!vRain.paused) vRain.pause();
+        } else {
+          seekVideo(vRain, smoothProgress * DURATION_RAIN);
+        }
+      }
+    }
+
+    requestAnimationFrame(videoScrubLoop);
+  }
+
+  // Iniciar el loop
+  requestAnimationFrame(videoScrubLoop);
+
 })();
 
